@@ -1,0 +1,20 @@
+The Log File Method (Recommended)
+You can instruct the agent to redirect the output of its commands into a text file, and then strictly tell it to read that file before moving on.
+
+Add this instruction to your .md file:
+
+"When executing long-running terminal commands like cloning or building, you must redirect the output to a log file (e.g., git clone [repo] > clone_log.txt 2>&1 and dotnet build > build_log.txt 2>&1). Do not proceed to the next step until you have read the contents of this log file to verify the process completed successfully and without errors."
+
+2. The "Chain and Status Check" Method
+Instead of having the agent run one command, wait, and guess when to run the next, tell it to chain the commands and create a "success flag" file only if everything passes.
+
+Add this instruction to your .md file:
+
+"Run clone and build tasks as a single chained command that outputs a success file when finished. For example: git clone [repo] && cd [repo] && dotnet build && echo done > success.txt. You must continuously check for the existence of success.txt before executing the next set of instructions. Once found, delete success.txt."
+
+3. Explicit Human-in-the-Loop (The Pause Method)
+If the AI extension you are using tends to hallucinate that a build is finished before it actually is, the safest route is to force it to ask you for permission.
+
+Add this instruction to your .md file:
+
+"After issuing the command to clone or build the repositories, you must immediately stop and ask the user: 'Please confirm when the build is complete.' Do not execute any further instructions or generate any code until the user replies with confirmation."
