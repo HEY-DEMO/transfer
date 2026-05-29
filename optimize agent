@@ -1,0 +1,8 @@
+How to Optimize Token Usage for your Agent
+To keep your agent fast, cheap, and accurate, follow these best practices:
+
+Keep Scripts Modular: Instead of one massive 5,000-line PowerShell script, break it into 5 smaller scripts (e.g., Step1_Config.ps1, Step2_Install.ps1). The agent will only use tokens for the specific file it is running at that moment.
+
+Silence Unnecessary Logs: If your script calls a build tool or installer that prints thousands of lines of useless progress bars, suppress them using parameters like -Quiet, -Silent, or by routing output to null ($null). Less text printed = fewer tokens used.
+
+Use the Status-File Trick: As mentioned before, having the script write a simple Success or Running to a tiny status.txt file means the agent only needs to read a single word (1 token) to check the status, rather than reading pages of console logs.
