@@ -1,0 +1,153 @@
+# AGENTS.md: Async Python Orchestration Infrastructure for PowerShell Builds
+
+## 1. Project Overview
+This repository contains a multi-agent automation platform designed to transform a static, manual PowerShell setup (cloning repos, building solutions, extracting and mapping DLLs) into an asynchronous, self-healing Python workflow. 
+
+### Core Tech Stack
+- **Runtime:** Python 3.11+
+- **Concurrency Engine:** Native Python `asyncio` (asynchronous subprocess execution)
+- **AI Reasoning & Error Parsing:** `dspy` (Declarative Self-Improving Language Programs)
+- **Target OS Environment:** Windows (PowerShell Core / Windows PowerShell)
+
+---
+
+## 2. System Architecture & Component Roles
+
+The architecture uses a hub-and-spoke model managed entirely by an asynchronous Orchestrator loop.
+
+┌────────────────────────────────────────────────────────┐
+   │                 Configuration Boundary                 │
+   │               (Target Repos & MD Rules)                │
+   └───────────────────────────┬────────────────────────────┘
+                               ▼
+   ┌────────────────────────────────────────────────────────┐
+   │                 AgentOrchestrator Loop                 │
+   │       (Manages concurrency via asyncio.gather)         │
+   └───────────────────────────┬────────────────────────────┘
+                               │
+          ┌────────────────────┴────────────────────┐
+          ▼                                         ▼
+┌──────────────────────┐                  ┌──────────────────────┐
+│    Pipeline: RepoA   │                  │    Pipeline: RepoB   │
+├──────────────────────┤                  ├──────────────────────┤
+│ 1. async Git Clone   │                  │ 1. async Git Clone   │
+│ 2. async PS Build    │                  │ 2. async PS Build    │
+│ 3. dspy On-Call Fix  │                  │ 3. dspy On-Call Fix  │
+│ 4. async DLL Map     │                  │ 4. async DLL Map     │
+└──────────────────────┘                  └──────────────────────┘
+
+
+### Component Breakdown
+
+1. **The Configurations (`.md` Profiles):** Contains static, deterministic rules for what variables to build, structural conventions, and the exact sequence of your custom script executions.
+2. **The `AgentOrchestrator` Class (Python `asyncio`):** The non-blocking controller loop. Instead of waiting for one repo to clone and finish building before starting the next, it initializes multiple pipeline paths concurrently using `asyncio.gather()`.
+3. **The `BuildTroubleshooter` Module (DSPy):** The intelligent fallback layer. If a PowerShell execution returns a non-zero exit code, the Orchestrator intercepts the raw stderr and stdout logs, passes them along with your `.md` guidance to a DSPy `ChainOfThought` module, and requests a targeted resolution command.
+
+---
+
+## 3. Implementation Requirements for Copilot
+
+When modifying or implementing this codebase, GitHub Copilot must follow these structural design laws:
+
+### Rule 1: Non-Blocking Subprocesses
+Never use `os.system()` or blocking `subprocess.run()`. All PowerShell scripts must run via `asyncio.create_subprocess_exec` to keep the main orchestrator event loop alive.
+
+### Rule 2: Decoupled Prompting (DSPy Signatures)
+Do not inline long strings or character descriptions. Use strict `dspy.Signature` classes with explicit input/output field descriptors.
+
+### Rule 3: Error Isolation
+If a pipeline path crashes or hits a critical exception, it must log the issue, trigger the DSPy self-healing routine, and **continue** processing the other repositories concurrently without crashing the parent event loop.
+
+---
+
+## 4. Canonical Code Reference
+
+Copilot should generate the Python backend matching this implementation blueprint:
+
+```python
+import asyncio
+import os
+import dspy
+
+# ------------------------------------------------------------------
+# 1. DSPy Interface Definitions
+# ------------------------------------------------------------------
+class BuildTroubleshooter(dspy.Signature):
+    """You are an on-call DevOps expert. Review the failed PowerShell build logs
+    and project markdown rules to generate the exact corrective command to run."""
+    md_guidelines = dspy.InputField(desc="Markdown specifications containing repository setup rules.")
+    ps_error_log = dspy.InputField(desc="The raw exit-code stdout and stderr error text.")
+    
+    corrected_ps_command = dspy.OutputField(desc="A single, valid PowerShell command string to fix the block.")
+
+# ------------------------------------------------------------------
+# 2. Async Execution Layer
+# ------------------------------------------------------------------
+async def execute_powershell(script_name: str, parameters: list) -> tuple[int, str]:
+    """Runs real PowerShell routines asynchronously without stalling the CPU loop."""
+    process = await asyncio.create_subprocess_exec(
+        'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script_name, *parameters,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await process.communicate()
+    combined_logs = stdout.decode(errors='ignore') + stderr.decode(errors='ignore')
+    return process.returncode, combined_logs
+
+# ------------------------------------------------------------------
+# 3. Pipeline Logic
+# ------------------------------------------------------------------
+class RepositoryPipeline:
+    def __init__(self, repo_name: str, guidelines: str):
+        self.repo_name = repo_name
+        self.guidelines = guidelines
+        self.brain = dspy.ChainOfThought(BuildTroubleshooter)
+
+    async def run(self):
+        print(f"📡 [START] Concurrent Pipeline triggered for: {self.repo_name}")
+        
+        # Simulated Step 1 & 2: Executing your existing .ps1 build files
+        exit_code, logs = await execute_powershell("build_solution.ps1", [self.repo_name])
+        
+        if exit_code != 0:
+            print(f"⚠️ [FAIL] {self.repo_name} build failed. Invoking DSPy self-healing...")
+            
+            # Run DSPy blocking call in a separate thread executor to preserve async loop health
+            loop = asyncio.get_running_loop()
+            prediction = await loop.run_in_executor(
+                None, lambda: self.brain(md_guidelines=self.guidelines, ps_error_log=logs)
+            )
+            
+            print(f"💡 [DSPy Advice for {self.repo_name}]: Try executing -> {prediction.corrected_ps_command}")
+            # Optional: await execute_powershell("-Command", [prediction.corrected_ps_command])
+        else:
+            print(f"✅ [SUCCESS] {self.repo_name} solution built cleanly. Proceeding to map DLLs.")
+
+# ------------------------------------------------------------------
+# 4. Orchestrator Event Loop
+# ------------------------------------------------------------------
+async def main():
+    # Load the MD configuration map
+    with open("AGENTS.md", "r") as f:
+        shared_guidelines = f.read()
+
+    # Targets to process in parallel
+    target_repositories = ["CoreServiceAPI", "DataIngestorPlugin", "LegacyDLLWrapper"]
+
+    # Initialize pipelines
+    tasks = [RepositoryPipeline(repo, shared_guidelines).run() for repo in target_repositories]
+    
+    # SPEEDUP: Run all repo actions simultaneously 
+    await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    # Ensure Copilot initializes your custom LLM/Copilot endpoint before execution
+    # lm = dspy.LM('openai/gpt-4o', api_key=os.environ.get("OPENAI_API_KEY"))
+    # dspy.configure(lm=lm)
+    asyncio.run(main())
+5. Explicit Operational Boundaries
+DO NOT attempt to delete original raw PowerShell scripts; wrap them instead.
+
+DO NOT block execution loops using sleep primitives without the await modifier (asyncio.sleep()).
+
+DO safely stream logs dynamically or format them to prevent token truncation limits in long MSBuild text blocks.
