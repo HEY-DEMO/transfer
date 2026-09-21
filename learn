@@ -1,0 +1,3 @@
+Day 1: Type System & Memory Architecture
+
+Value types vs. reference types, stack vs. heap allocation, struct vs. class, ref struct, nullability mechanics (Nullable<T>, nullable reference types, compiler checks vs. runtime nulls).
