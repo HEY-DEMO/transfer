@@ -1,3 +1,8 @@
 Day 1: Type System & Memory Architecture
 
 Value types vs. reference types, stack vs. heap allocation, struct vs. class, ref struct, nullability mechanics (Nullable<T>, nullable reference types, compiler checks vs. runtime nulls).
+
+Day 2: Object-Oriented Semantics & Modern Pattern Matching
+
+Inheritance vs. composition, virtual/override vs. new, abstract classes vs. interfaces, records (record class vs. record struct), switch expressions, property and relational pattern matching.
+
