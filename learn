@@ -10,4 +10,7 @@ Day 3: Generics, Collections & Delegates
 
 Generic constraints (where T : class, new()), variance (in/out), collection internals (List<T>, Dictionary<TKey, TValue> hash collisions/growth factors), delegates, Func<T>, Action<T>, lambda expressions.
 
+Day 4: Memory Optimization & Modern Types
+
+Span<T>, ReadOnlySpan<T>, Memory<T>, string allocation overhead, ArrayPool<T>, in/out/ref parameters, unmanaged memory pointers (unsafe context overview).
 
