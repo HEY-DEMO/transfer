@@ -14,3 +14,12 @@ Day 4: Memory Optimization & Modern Types
 
 Span<T>, ReadOnlySpan<T>, Memory<T>, string allocation overhead, ArrayPool<T>, in/out/ref parameters, unmanaged memory pointers (unsafe context overview).
 
+Day 5: Garbage Collection & Resource Lifetime
+
+Generations 0, 1, and 2, Large Object Heap (LOH), Ephemeral segment, GC triggers and compaction, IDisposable, IAsyncDisposable, the standard dispose pattern, SafeHandle.
+
+ay 6: LINQ Architecture & Deferred Execution
+
+IEnumerable<T> vs. IQueryable<T>, extension methods, deferred execution pitfalls (multiple enumeration, closure captures), custom LINQ query operators.
+
+
