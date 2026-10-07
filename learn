@@ -38,4 +38,25 @@ Day 10: Serialization & Core CLI Tooling
 
 System.Text.Json (custom converters, contract resolvers, source-generation mode), .csproj property inspection, multi-targeting, CLI profiling with dotnet-dump, dotnet-trace.
 
+Day 6: LINQ Architecture & Deferred Execution
+
+IEnumerable<T> vs. IQueryable<T>, extension methods, deferred execution pitfalls (multiple enumeration, closure captures), custom LINQ query operators.
+
+Day 7: Async/Await Mechanics & The State Machine
+
+Task, ValueTask, TaskCompletionSource, how compiler transforms async/await into state machines, SynchronizationContext, thread pool task scheduling.
+
+Day 8: Advanced Concurrency & Coordination
+
+CancellationToken propagation, SemaphoreSlim, Channel<T> for producer-consumer workloads, lock-free primitives (Interlocked), concurrent collections (ConcurrentDictionary<TKey, TValue>).
+
+Day 9: Reflection, Attributes & Source Generators
+
+Type inspection via System.Reflection, custom attributes, compile-time Roslyn Source Generators vs. runtime reflection overhead, emit & dynamic dispatch.
+
+Day 10: Serialization & Core CLI Tooling
+
+System.Text.Json (custom converters, contract resolvers, source-generation mode), .csproj property inspection, multi-targeting, CLI profiling with dotnet-dump, dotnet-trace.
+
+
 
