@@ -58,3 +58,33 @@ Day 15: Advanced SQL & ORM Integration Patterns
 
 Window functions (ROW_NUMBER, RANK, LEAD/LAG), CTEs, stored procedures vs. dynamic SQL, mapping data access through Entity Framework Core (tracking vs. no-tracking, batching) and micro-ORMs like Dapper.
 
+Day 16: V8 Engine & Execution Context
+
+Web App Goal: Master JS memory flow for complex client-side calculations.
+
+Concepts Applied: Call Stack, Heap, Execution Context, closures, variable scoping (const/let vs. var), hoisting, and memory leaks from forgotten listeners.
+
+Day 17: Prototype Chain & 'this' Context
+
+Web App Goal: Write predictable object transformations.
+
+Concepts Applied: Prototypal inheritance, ES6 class mechanics, dynamic vs. lexical this binding, call, apply, and bind methods.
+
+Day 18: Asynchronous Event Loop
+
+Web App Goal: Manage asynchronous client state cleanly.
+
+Concepts Applied: Microtasks (Promises) vs. Macrotasks (setTimeout), non-blocking asynchronous browser loops, Promise.allSettled for batch client requests.
+
+Day 19: Modern ES6+ & Functional Pipelines
+
+Web App Goal: Transform product data tables on the client.
+
+Concepts Applied: Pure functions, immutability, destructuring, spread/rest operators, array manipulation pipelines (map, filter, reduce, flatMap).
+
+Day 20: TypeScript Typing System
+
+Web App Goal: Build strong type contracts mirroring the C# backend DTOs.
+
+Concepts Applied: Interfaces vs. Type Aliases, Generics, Utility Types (Partial<T>, Pick<T, K>, Omit<T, K>), strict null checking, Discriminated Unions for UI request state (Loading | Success | Error).
+
