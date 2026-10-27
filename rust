@@ -1,0 +1,65 @@
+Actionable Fixes to Speed Up Your App
+​Apply these optimizations in order of impact—the first two alone often turn a sluggish app into an instant one.
+​Step 1: Make Sure You Are Not Running a Debug Build
+​This is the #1 trap in Rust GUI development. Because egui tessellates thousands of triangles on the CPU every frame, running cargo run (unoptimized debug mode) without a GPU will bring your CPU to its knees.
+​Either run with cargo run --release, or add this to your Cargo.toml so even your normal cargo run debug builds compile egui and the renderer at full speed:
+
+[profile.dev.package."*"]
+opt-level = 3
+
+
+
+Stop Unconditional Repaints
+​Check your codebase for ctx.request_repaint().
+​If you call ctx.request_repaint() unconditionally inside update(), you are forcing a 60 FPS continuous game loop on a software CPU rasterizer.
+​Also beware of animated spinners (ui.spinner()) or continuous progress bars—while visible, they call request_repaint() every frame.
+​If you need background data updates, wake the UI thread only when data actually arrives, or use ctx.request_repaint_after(std::time::Duration::from_millis(250)).
+
+
+Step 3: Turn Off Expensive Tessellation (Feathering & Shadows)
+​By default, egui uses feathering—it generates extra microscopic triangle strips around the edges of every shape to fake anti-aliasing—and draws large drop shadows under windows and popups. On a CPU rasterizer, alpha-blending all those extra pixels is very expensive.
+​Run this once inside your app's initialization (CreationContext when starting eframe):
+
+pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    // 1. Disable anti-aliasing feathering (halves vertex/triangle count)
+    cc.egui_ctx.tessellation_options_mut(|tess_options| {
+        tess_options.feathering = false;
+    });
+
+    // 2. Kill window & popup drop shadows (huge fill-rate saver on software renderers)
+    cc.egui_ctx.style_mut(|style| {
+        style.visuals.window_shadow = egui::epaint::Shadow::NONE;
+        style.visuals.popup_shadow = egui::epaint::Shadow::NONE;
+    });
+
+    Self { /* your app state */ }
+}
+
+
+Virtualize Long Lists & Large XML/Text Views
+​Since you mentioned Oxygen XML Editor, if your app displays large files, trees, or thousands of rows inside a standard egui::ScrollArea::vertical().show(...), egui is laying out and tessellating every single off-screen line on every mouse move.
+​Never use .show() for large lists. Always use .show_rows(), which only processes the exact rows currently visible in the viewport:
+
+
+let row_height = ui.text_style_height(&egui::TextStyle::Body);
+let total_rows = my_items.len();
+
+egui::ScrollArea::vertical().show_rows(
+    ui,
+    row_height,
+    total_rows,
+    |ui, row_range| {
+        for row_index in row_range {
+            ui.label(&my_items[row_index]);
+        }
+    },
+);
+
+
+Pick the Right Software Backend (wgpu DX12 WARP vs. glow)
+​Depending on which version of eframe you are using, the backend makes a huge difference on a GPU-less Windows machine:
+
+Cache Heavy Work Out of update()
+​Remember that update() is called dozens of times a second whenever the mouse moves over your window.
+​Do not parse XML/JSON, format large strings, sort vectors, or run regex inside update().
+​Compute your display state once when the user edits something or loads a file, store the result in your struct, and only let update() read references to that pre-computed state.
